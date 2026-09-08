@@ -2,6 +2,13 @@ node_modules/
 dist/
 *.zip
 
+# Claude Code — everything else under .claude/ is committed on purpose,
+# so the agents, skills and hooks travel with the repo.
+.claude/settings.local.json
+
+# Dedicated Chrome profile for `npm run debug:chrome`
+.chrome-debug/
+
 # macOS
 .DS_Store
 
