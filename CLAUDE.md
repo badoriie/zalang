@@ -173,8 +173,25 @@ Requires `npm install -g typescript-language-server typescript` once, plus a Cla
 
 ### Skills
 
-`/add-provider`, `/release` (bumps **both** version fields), `/test-injection` (the six-fixture manual
-pass), `/tune-prompt`, `/debug-extension` (Chrome DevTools MCP).
+`/commit` (Conventional Commits), `/add-provider`, `/release` (bumps **both** version fields),
+`/test-injection` (the six-fixture manual pass), `/tune-prompt`, `/debug-extension` (Chrome DevTools
+MCP).
+
+### Commits
+
+This repo uses [Conventional Commits](https://www.conventionalcommits.org), enforced by `commitlint`
+on a husky `commit-msg` hook — a malformed message is rejected, not warned about.
+
+```
+type(scope): subject
+```
+
+Types: `feat` `fix` `refactor` `perf` `docs` `test` `build` `ci` `chore` `style` `revert`.
+Scopes: `providers` `content` `prompts` `background` `options` `manifest` `build` `test` `claude` `ci`
+`deps` `docs` (unknown scopes warn rather than block; the list lives in `commitlint.config.js`).
+
+Header ≤ 72 chars, **lower-case subject** (`feat: add x`, not `feat: Add x` — the usual trip-up),
+imperative mood, no trailing period. Use `/commit` and it handles this.
 
 ### Hooks that will act on you
 
