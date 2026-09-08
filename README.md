@@ -91,9 +91,13 @@ npm run debug:chrome  # Chrome on port 9222 with a dedicated debug profile
 ### Claude Code
 
 The repo ships a committed `.claude/` workspace: agents (`security-auditor`, `prompt-linguist`,
-`extension-reviewer`, `provider-adapter`, `build-verifier`), skills (`/add-provider`, `/release`,
-`/test-injection`, `/tune-prompt`, `/debug-extension`), and hooks that auto-format, block edits to
-`dist/`, refuse commits containing API keys, and gate turns on a passing typecheck. See `CLAUDE.md`.
+`extension-reviewer`, `provider-adapter`, `build-verifier`), skills (`/commit`, `/add-provider`,
+`/release`, `/test-injection`, `/tune-prompt`, `/debug-extension`), and hooks that auto-format, block
+edits to `dist/`, refuse commits containing API keys, and gate turns on a passing typecheck. See
+`CLAUDE.md`.
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org), enforced by `commitlint` on
+a husky `commit-msg` hook.
 
 `npm run debug:chrome` launches a separate Chrome profile the Chrome DevTools MCP attaches to on port
 9222 — load `dist/` unpacked into it once. Note that `--load-extension` no longer works in branded
