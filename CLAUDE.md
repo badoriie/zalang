@@ -173,9 +173,35 @@ Requires `npm install -g typescript-language-server typescript` once, plus a Cla
 
 ### Skills
 
-`/commit` (Conventional Commits), `/add-provider`, `/release` (bumps **both** version fields),
-`/test-injection` (the six-fixture manual pass), `/tune-prompt`, `/debug-extension` (Chrome DevTools
-MCP).
+`/commit` (Conventional Commits), `/pr` (branch → PR → rebase-merge → cleanup), `/add-provider`,
+`/release` (bumps **both** version fields), `/test-injection` (the six-fixture manual pass),
+`/tune-prompt`, `/debug-extension` (Chrome DevTools MCP).
+
+### Branching — main is protected
+
+**Never commit or push on `main`.** The `main-branch` ruleset is active with **no bypass actors**, so a
+direct push is rejected server-side regardless of who you are. A hook blocks it locally first.
+
+```bash
+git switch -c <type>/<slug>    # feat/xai-adapter, fix/overlay-dismiss, docs/chrome-137
+# ... commit ...
+git fetch origin && git rebase origin/main
+git push -u origin HEAD
+gh pr create --fill
+gh pr merge --rebase --delete-branch
+```
+
+**Rebase only — never merge, never squash.** `required_linear_history` is on and `rebase` is the sole
+allowed merge method, so a merge commit is rejected outright. To bring a branch up to date use
+`git rebase origin/main`, never `git merge origin/main`. This repo sets `pull.rebase=true` and
+`rebase.autoStash=true` locally so `git pull` does the right thing by default.
+
+Remote branches are deleted automatically on merge (`delete_branch_on_merge`); `git fetch --prune`
+clears the stale tracking refs locally.
+
+No approval is required (`required_approving_review_count: 0`), so you can merge your own PR — but CI
+is **not** a required status check, so GitHub will happily let a red PR merge. Check `gh pr checks`
+yourself. Full flow: `/pr`.
 
 ### Commits
 
@@ -197,6 +223,8 @@ imperative mood, no trailing period. Use `/commit` and it handles this.
 
 - Writes into `dist/` are **denied** — it's generated output; edit `src/` and rebuild.
 - Files are Prettier-formatted automatically after every write.
+- `git commit` and `git push` are blocked while on `main` (tag pushes and remote branch deletions are
+  still allowed).
 - `git commit` is blocked if staged content looks like a provider API key.
 - Finishing a turn with a failing `tsc --noEmit` is blocked, with the errors handed back.
 
