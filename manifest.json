@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "zalang — Farsi → German chat assistant",
+  "version": "0.1.0",
+  "description": "Type Farsi or Finglish in any chat box, press a hotkey, get natural formal German in place. Select German text to get it explained in Farsi.",
+  "permissions": ["storage", "contextMenus"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "zalang settings"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

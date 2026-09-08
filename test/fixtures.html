@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>zalang injection fixtures</title>
+    <style>
+      body {
+        font:
+          14px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 28px 20px 120px;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: #666;
+        margin: 0 0 20px;
+        font-size: 13px;
+      }
+      section {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 14px;
+        margin: 14px 0;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 0 0 4px;
+      }
+      .why {
+        color: #666;
+        font-size: 12px;
+        margin: 0 0 10px;
+      }
+      textarea,
+      input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 7px;
+        font: inherit;
+        font-size: 13px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .ce {
+        min-height: 56px;
+        padding: 7px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background: #fff;
+        font-size: 13px;
+      }
+      .ce:empty::before {
+        content: attr(data-placeholder);
+        color: #aaa;
+      }
+      iframe {
+        width: 100%;
+        height: 130px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .note {
+        background: #fff8e6;
+        border: 1px solid #f3e2b3;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 13px;
+        margin: 16px 0;
+      }
+      code {
+        background: #eee;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>zalang injection fixtures</h1>
+    <p class="sub">
+      Type Finglish into each field and press your translate hotkey. German must replace it in
+      <strong>every</strong> one, and <kbd>Esc</kbd> must restore the original.
+    </p>
+
+    <div class="note">
+      Serve this over HTTP so the iframe gets a content script:
+      <code>cd test &amp;&amp; python3 -m http.server 8000</code> → open
+      <code>http://localhost:8000/fixtures.html</code>. Opening it as a <code>file://</code> URL
+      needs "Allow access to file URLs" enabled for the extension.
+    </div>
+
+    <section>
+      <h2>1. Plain textarea</h2>
+      <p class="why">Baseline. If this fails, nothing else will.</p>
+      <textarea rows="3" placeholder="salam, man paket-am ro nagereftam"></textarea>
+    </section>
+
+    <section>
+      <h2>2. React-controlled textarea</h2>
+      <p class="why">
+        Reverts a naive <code>el.value = x</code>. Only the native prototype setter gets through.
+      </p>
+      <textarea id="controlled" rows="3" placeholder="controlled — reverts naive writes"></textarea>
+    </section>
+
+    <section>
+      <h2>3. contenteditable</h2>
+      <p class="why">
+        Intercom, Zendesk, Slack, Draft.js / Slate / ProseMirror. Needs
+        <code>execCommand("insertText")</code>.
+      </p>
+      <div
+        class="ce"
+        contenteditable="true"
+        data-placeholder="salam, man paket-am ro nagereftam"
+      ></div>
+    </section>
+
+    <section>
+      <h2>4. Same-origin iframe</h2>
+      <p class="why">
+        Needs <code>all_frames: true</code> and the keydown listener in the focused frame.
+      </p>
+      <iframe src="frame.html" title="iframe fixture"></iframe>
+    </section>
+
+    <section>
+      <h2>5. Shadow DOM</h2>
+      <p class="why">
+        Widgets nest their composer in a shadow root — <code>document.activeElement</code> returns
+        the host, so we drill in.
+      </p>
+      <div id="shadow-host"></div>
+    </section>
+
+    <section>
+      <h2>6. Plain input</h2>
+      <p class="why">Single-line. Caret must land at the end so Enter sends straight away.</p>
+      <input type="text" placeholder="salam" />
+    </section>
+
+    <script>
+      // Mimic React's controlled input: React tracks the last value it wrote, so
+      // an assignment through the *instance* setter looks like "no change" and
+      // gets reverted on the next render. Only the native prototype setter
+      // bypasses the tracker.
+      (() => {
+        const el = document.getElementById("controlled");
+        const native = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+        let state = "";
+        let tracked = "";
+
+        Object.defineProperty(el, "value", {
+          configurable: true,
+          get() {
+            return native.get.call(this);
+          },
+          set(v) {
+            tracked = v; // instance write updates the tracker → change goes unnoticed
+            native.set.call(this, v);
+          },
+        });
+
+        el.addEventListener("input", () => {
+          const current = native.get.call(el);
+          if (current !== tracked) {
+            state = current; // a real change the tracker didn't expect
+            tracked = current;
+          }
+          if (native.get.call(el) !== state) native.set.call(el, state); // re-render from state
+        });
+      })();
+
+      // Shadow DOM fixture.
+      (() => {
+        const root = document.getElementById("shadow-host").attachShadow({ mode: "open" });
+        root.innerHTML = `
+          <style>
+            textarea { width:100%; box-sizing:border-box; padding:7px; font:13px sans-serif;
+                       border:1px solid #ccc; border-radius:5px; }
+          </style>
+          <textarea rows="3" placeholder="inside a shadow root"></textarea>`;
+      })();
+    </script>
+  </body>
+</html>
