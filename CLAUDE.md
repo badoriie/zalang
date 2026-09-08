@@ -146,6 +146,43 @@ cd test && python3 -m http.server 8000   # then open localhost:8000/fixtures.htm
 `npm test` asserts that every file the manifest references exists in `dist/`, so **build before
 testing** (`npm run check` does this in the right order).
 
+## Working with Claude Code in this repo
+
+The repo carries its own `.claude/` workspace — agents, skills and hooks are committed so the tooling
+travels with the code.
+
+### Prefer LSP over grep for symbols
+
+The TypeScript language server is configured. Use the `LSP` tool — `goToDefinition`, `findReferences`,
+`documentSymbol`, `workspaceSymbol`, call hierarchy — for **symbol** navigation: tracing `Adapter`,
+`Profile` or the `Message` union across `src/providers/`, `src/content/` and `src/background.ts`.
+Reserve `Grep` for text, comments and non-symbol searches. This is worth stating explicitly because the
+default pull is toward grep, and grep gets renames and call sites wrong in ways that compile.
+
+Requires `npm install -g typescript-language-server typescript` once, plus a Claude Code restart.
+
+### Agents
+
+| Agent                | Use for                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `security-auditor`   | Before a release, or after touching the overlay/options rendering, the provider layer, or the manifest. Read-only. Runs on Fable at `xhigh` — deliberately invoked, never automatic. |
+| `prompt-linguist`    | Any change to `src/prompts.ts`. German register and Persian fidelity.                                                                                                                |
+| `extension-reviewer` | Any change to `src/content/**`, `src/background.ts` or `manifest.json`.                                                                                                              |
+| `provider-adapter`   | Adding or fixing an LLM provider. Writes only inside `src/providers/`.                                                                                                               |
+| `build-verifier`     | Cheap "is the tree green" check.                                                                                                                                                     |
+
+### Skills
+
+`/add-provider`, `/release` (bumps **both** version fields), `/test-injection` (the six-fixture manual
+pass), `/tune-prompt`, `/debug-extension` (Chrome DevTools MCP).
+
+### Hooks that will act on you
+
+- Writes into `dist/` are **denied** — it's generated output; edit `src/` and rebuild.
+- Files are Prettier-formatted automatically after every write.
+- `git commit` is blocked if staged content looks like a provider API key.
+- Finishing a turn with a failing `tsc --noEmit` is blocked, with the errors handed back.
+
 ## Style
 
 Prettier-formatted, 100 columns, strict TypeScript. Comments explain **why**, especially where the
