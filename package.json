@@ -1,0 +1,64 @@
+{
+  "name": "zalang",
+  "version": "0.1.0",
+  "description": "Chrome extension: type Farsi or Finglish in any chat box, get natural formal German in place. Provider-agnostic — works with any LLM API.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/badoriie/zalang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/badoriie/zalang/issues"
+  },
+  "homepage": "https://github.com/badoriie/zalang#readme",
+  "keywords": [
+    "chrome-extension",
+    "manifest-v3",
+    "typescript",
+    "translation",
+    "farsi",
+    "persian",
+    "german",
+    "llm"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,html,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/chrome": "^0.0.280",
+    "@types/node": "^22.7.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.10.0"
+  }
+}

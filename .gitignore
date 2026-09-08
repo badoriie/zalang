@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.zip
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Logs
+npm-debug.log*
+*.log
