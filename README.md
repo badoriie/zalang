@@ -99,6 +99,10 @@ edits to `dist/`, refuse commits containing API keys, and gate turns on a passin
 Commits follow [Conventional Commits](https://www.conventionalcommits.org), enforced by `commitlint` on
 a husky `commit-msg` hook.
 
+`main` is protected: work goes on a branch and reaches main through a **rebase-merged** pull request —
+no merge commits, no squash, linear history. Remote branches are deleted automatically on merge. Use
+`/pr` for the whole flow.
+
 `npm run debug:chrome` launches a separate Chrome profile the Chrome DevTools MCP attaches to on port
 9222 — load `dist/` unpacked into it once. Note that `--load-extension` no longer works in branded
 Chrome (removed in 137), which is why the extension is loaded by hand rather than by flag.

@@ -9,6 +9,22 @@ Commit the current work as a Conventional Commit.
 `commitlint` runs on a husky `commit-msg` hook, so a malformed message is **rejected** — get the format
 right rather than discovering it at commit time.
 
+## Step 0 — Not on main
+
+`main` is protected with no bypass actors; a hook blocks commits made from it. Check first:
+
+```bash
+git branch --show-current
+```
+
+If it says `main`, branch before committing — the name mirrors the commit type you're about to use:
+
+```bash
+git switch -c <type>/<slug>     # feat/xai-adapter, fix/overlay-dismiss, docs/chrome-137
+```
+
+Work reaches main through a rebase-merged PR — see `/pr`.
+
 ## Step 1 — Look at what actually changed
 
 ```bash
@@ -119,5 +135,5 @@ test(content): cover shadow-root drilling in getActiveEditable
 ## Notes
 
 - **Only commit when asked.** Don't commit as a reflex at the end of a task.
-- Don't push unless the user asks for that too.
+- Don't push unless the user asks for that too. Getting the work to main is `/pr`.
 - Existing history predates this convention; it is not retroactively enforced.
