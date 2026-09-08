@@ -39,18 +39,42 @@ npm run check
 
 `version is semver and matches package.json` must pass.
 
-**5. Commit and tag.**
+**5. Commit on a release branch — main is protected.**
 
 ```bash
+git switch -c chore/release-v<version>
 git add package.json manifest.json
-git commit -m "Release v<version>"
-git tag v<version>
-git push && git push --tags
+git commit -m "chore(deps): release v<version>"
+git push -u origin HEAD
 ```
 
-The pre-push hook runs typecheck and tests again.
+The message must satisfy `commitlint`; `chore: release v<version>` (no scope) is fine too.
 
-**6. Confirm CI.**
+**6. PR, then rebase-merge.**
+
+```bash
+gh pr create --title "chore: release v<version>" --body "Release v<version>."
+gh pr checks --watch
+gh pr merge --rebase --delete-branch
+```
+
+Rebase is the only merge method the ruleset allows.
+
+**7. Tag main after the merge — not before.**
+
+The tag must point at the commit that actually landed on main. Because the merge rebases, the SHA on
+main differs from the one on your branch, so tagging earlier tags a commit that no longer exists.
+
+```bash
+git switch main
+git pull
+git tag v<version>
+git push origin v<version>
+```
+
+Pushing a tag from main is allowed — the ruleset governs branch refs, not tags.
+
+**8. Confirm CI.**
 
 ```bash
 gh run list --limit 1
