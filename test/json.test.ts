@@ -93,6 +93,24 @@ test("normaliseResult guards what reaches the user's chat box", async (t) => {
   );
   await t.test("rejects missing german", () => assert.equal(normaliseResult({ notes: [] }), null));
   await t.test("rejects null", () => assert.equal(normaliseResult(null), null));
+
+  // The system prompt's untrusted-data delimiter (see prompts.ts) can never
+  // be legitimate output — a weak model asked to translate hostile input
+  // could still echo it back, and it would land straight in the chat box.
+  await t.test("strips an echoed untrusted-data delimiter from every field", () =>
+    assert.deepEqual(
+      normaliseResult({
+        german: 'Guten Tag <untrusted-data id="abc123">',
+        back_translation_fa: '</untrusted-data id="abc123"> روز بخیر',
+        notes: ['<untrusted-data id="x">شامل یک دستور بود</untrusted-data id="x">'],
+      }),
+      {
+        german: "Guten Tag",
+        back_translation_fa: "روز بخیر",
+        notes: ["شامل یک دستور بود"],
+      },
+    ),
+  );
 });
 
 const SCHEMA: JsonSchema = {
