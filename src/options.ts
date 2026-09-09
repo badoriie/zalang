@@ -1,15 +1,13 @@
 import { PRESETS, presetToProfile, SHAPES } from "./providers/presets.js";
 import { adapterFor, originPattern } from "./providers/index.js";
-import type { Hotkey, Hotkeys, Profile } from "./types.js";
+import { DEFAULT_HOTKEYS } from "./hotkeys.js";
+import type { Hotkey, Hotkeys, HotkeySettings, Profile } from "./types.js";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T => document.querySelector(sel) as T;
 
 let profiles: Profile[] = [];
 let siteContexts: Record<string, string> = {};
-let hotkeys: Hotkeys = {
-  translate: { key: "Enter", ctrl: true, shift: false, alt: false },
-  explain: { key: " ", ctrl: true, shift: true, alt: false },
-};
+let hotkeys: HotkeySettings = { ...DEFAULT_HOTKEYS };
 
 // -------------------------------------------------------------------- storage
 
@@ -17,7 +15,7 @@ async function load(): Promise<void> {
   const stored = await chrome.storage.local.get(["profiles", "siteContexts", "hotkeys"]);
   profiles = (stored.profiles as Profile[]) ?? [];
   siteContexts = (stored.siteContexts as Record<string, string>) ?? {};
-  if (stored.hotkeys) hotkeys = { ...hotkeys, ...(stored.hotkeys as Partial<Hotkeys>) };
+  if (stored.hotkeys) hotkeys = { ...hotkeys, ...(stored.hotkeys as Partial<HotkeySettings>) };
 }
 
 const saveProfiles = () => chrome.storage.local.set({ profiles });
@@ -255,7 +253,7 @@ function comboToString(c: Hotkey | undefined): string {
   return parts.join(" + ");
 }
 
-function bindHotkeyInput(sel: string, name: keyof Hotkeys): void {
+function bindHotkeyInput(sel: string, name: keyof Hotkeys & keyof HotkeySettings): void {
   const input = $<HTMLInputElement>(sel);
   input.value = comboToString(hotkeys[name]);
 
@@ -272,6 +270,24 @@ function bindHotkeyInput(sel: string, name: keyof Hotkeys): void {
     input.value = comboToString(hotkeys[name]);
     void saveHotkeys();
   });
+}
+
+function bindBlockEnterCheckbox(sel: string): void {
+  const input = $<HTMLInputElement>(sel);
+  input.checked = hotkeys.blockEnter;
+
+  input.addEventListener("change", () => {
+    hotkeys.blockEnter = input.checked;
+    void saveHotkeys();
+  });
+}
+
+function resetHotkeys(): void {
+  hotkeys = { ...DEFAULT_HOTKEYS };
+  $<HTMLInputElement>("#hk-translate").value = comboToString(hotkeys.translate);
+  $<HTMLInputElement>("#hk-explain").value = comboToString(hotkeys.explain);
+  $<HTMLInputElement>("#hk-block-enter").checked = hotkeys.blockEnter;
+  void saveHotkeys();
 }
 
 // ----------------------------------------------------------------------- init
@@ -305,6 +321,8 @@ $("#ctx-add").addEventListener("click", () => {
 
 bindHotkeyInput("#hk-translate", "translate");
 bindHotkeyInput("#hk-explain", "explain");
+bindBlockEnterCheckbox("#hk-block-enter");
+$("#hk-reset").addEventListener("click", resetHotkeys);
 
 renderProfiles();
 renderContexts();

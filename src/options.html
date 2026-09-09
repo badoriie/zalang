@@ -248,6 +248,23 @@
     <div class="hint">
       Select the operator's German message, then press this to get it in Farsi.
     </div>
+    <div class="row">
+      <label>Send safety</label>
+      <label style="flex: 1; font-size: 13px; font-weight: normal; color: inherit">
+        <input type="checkbox" id="hk-block-enter" />
+        Block plain Enter from sending
+      </label>
+    </div>
+    <div class="hint">
+      Stops a bare Enter from submitting <strong>any</strong> text field on
+      <strong>any</strong> site while this is on — not just chat boxes — so a Farsi message can't go
+      out by mistake before you've translated it. Use each site's own Send button instead.
+      Shift+Enter and the hotkeys above are unaffected. Worth switching off again once you're done
+      with the chat.
+    </div>
+    <div class="toolbar">
+      <button id="hk-reset">Reset hotkeys to default</button>
+    </div>
 
     <script type="module" src="./options.js"></script>
   </body>

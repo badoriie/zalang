@@ -173,7 +173,10 @@ export function loading(anchor: Anchor, label = "در حال ترجمه…"): vo
 }
 
 /** Compose result: German is already in the chat box, so show the Farsi check. */
-export function result(anchor: Anchor, data: AnnotatedResult): void {
+export function result(anchor: Anchor, data: AnnotatedResult, blockEnter = false): void {
+  const sendHint = blockEnter
+    ? "Esc = undo · use the chat's Send button"
+    : "Esc = undo · Enter = send";
   render(
     `<div class="head">
        <span>✓ آماده ارسال</span><span class="spacer"></span>
@@ -191,7 +194,7 @@ export function result(anchor: Anchor, data: AnnotatedResult): void {
        <button data-act="detail">کامل‌تر</button>
        <button data-act="regenerate">دوباره</button>
        <span class="spacer"></span>
-       <span class="hint">Esc = undo · Enter = send</span>
+       <span class="hint">${esc(sendHint)}</span>
      </div>`,
     anchor,
   );
