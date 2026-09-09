@@ -7,6 +7,12 @@ marked by the git tag and GitHub Release, not by the version number itself.
 
 ## [Unreleased]
 
+### Added
+
+- Optional "Block plain Enter from sending" setting, so a Farsi message can't be sent by habit before
+  it's translated. Off by default.
+- "Reset hotkeys to default" button in Settings.
+
 ### Fixed
 
 - Conversation context now applies across subdomains — a context configured for `example.de` was
