@@ -17,12 +17,19 @@ import type {
 
 let keys: HotkeySettings = DEFAULT_HOTKEYS;
 
-void chrome.storage.local.get("hotkeys").then(({ hotkeys }) => {
+// Hotkeys live in the sync area, not local, so this listener never has a
+// reason to subscribe to "local" — which is where profiles (API keys
+// included) live. chrome.storage.onChanged delivers every changed key in
+// whichever area a listener is on with no per-key filter, so a content
+// script listening on "local" would receive the full profiles array,
+// cleartext keys included, on every settings save even though it never
+// reads them.
+void chrome.storage.sync.get("hotkeys").then(({ hotkeys }) => {
   if (hotkeys) keys = { ...DEFAULT_HOTKEYS, ...(hotkeys as Partial<HotkeySettings>) };
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.hotkeys?.newValue) {
+  if (area === "sync" && changes.hotkeys?.newValue) {
     keys = { ...DEFAULT_HOTKEYS, ...(changes.hotkeys.newValue as Partial<HotkeySettings>) };
   }
 });
@@ -148,6 +155,12 @@ overlay.onAction((action) => {
 document.addEventListener(
   "keydown",
   (e) => {
+    // A page can dispatch a synthetic KeyboardEvent on itself, and this
+    // listener runs in every frame of every site — without this check any
+    // page could silently trigger a translate/explain call (spending the
+    // user's API key and reading the result back out of a field it controls)
+    // with no click and no visible UI, e.g. inside a zero-size iframe.
+    if (!e.isTrusted) return;
     if (e.isComposing) return;
 
     if (matches(e, keys.translate)) {
@@ -214,6 +227,7 @@ document.addEventListener(
 
 // Sending clears the undo buffer.
 document.addEventListener("keydown", (e) => {
+  if (!e.isTrusted) return;
   if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.shiftKey && pending) {
     pending = null;
     activeOverlay = null;
@@ -224,6 +238,7 @@ document.addEventListener("keydown", (e) => {
 // Click away to dismiss — but never on the panel itself, or the refine buttons
 // would be removed before their click event fired.
 document.addEventListener("mousedown", (e) => {
+  if (!e.isTrusted) return;
   if (overlay.owns(e.target) || e.target === pending?.el) return;
   activeOverlay = null;
   overlay.hide();
@@ -231,8 +246,15 @@ document.addEventListener("mousedown", (e) => {
 
 // Pre-warm the service worker. MV3 workers idle out after ~30s and the cold
 // start is real perceived latency — by the time you finish typing, it's awake.
+// isTrusted here blocks a page calling dispatchEvent() to fake this, though
+// not a page calling el.focus() on its own field — that's a genuine, trusted
+// focus event per spec, indistinguishable from a real user click. Low stakes
+// either way: the 20s throttle bounds it to keeping the worker warm, not
+// spending anything, and the privileged compose/explain calls below are
+// gated on trusted keydowns regardless.
 let lastPing = 0;
-document.addEventListener("focusin", () => {
+document.addEventListener("focusin", (e) => {
+  if (!e.isTrusted) return;
   if (!isEditable(document.activeElement)) return;
 
   const now = Date.now();
