@@ -6,6 +6,8 @@ Enter. Select the operator's German reply and press a hotkey to get it explained
 
 Built for live chats with Kundenservice, Behörden, Vermieter, Versicherungen and hotlines.
 
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## What it actually does
 
 It doesn't translate word for word. Persian politeness conventions — ta'arof, long preambles, indirect
