@@ -3,6 +3,7 @@
 
 import { complete } from "./providers/index.js";
 import { resolveSiteContext } from "./context.js";
+import { migrateHotkeys } from "./hotkeys.js";
 import {
   TRANSLATE_SCHEMA,
   composeSystemPrompt,
@@ -118,6 +119,10 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "zalang: توضیح بده (explain this German)",
     contexts: ["selection"],
   });
+  // Runs on every install and update — not just the next time options opens —
+  // so an existing user's custom hotkeys and blockEnter setting survive an
+  // update even if they never revisit settings afterward.
+  void migrateHotkeys();
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -132,4 +137,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.action.onClicked.addListener(() => {
   void chrome.runtime.openOptionsPage();
+});
+
+// "Block plain Enter" is meant as a temporary posture for the length of one
+// chat, not a permanent change to how Enter behaves on every site — auto-off
+// on browser restart bounds how long forgetting to switch it back can last.
+chrome.runtime.onStartup.addListener(() => {
+  void chrome.storage.sync.get("hotkeys").then(({ hotkeys }) => {
+    const current = hotkeys as { blockEnter?: boolean } | undefined;
+    if (current?.blockEnter) {
+      void chrome.storage.sync.set({ hotkeys: { ...current, blockEnter: false } });
+    }
+  });
 });

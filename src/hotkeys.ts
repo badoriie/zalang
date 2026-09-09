@@ -13,3 +13,28 @@ export const DEFAULT_HOTKEYS: HotkeySettings = Object.freeze({
   explain: Object.freeze({ key: " ", ctrl: true, shift: true, alt: false }),
   blockEnter: false,
 });
+
+/**
+ * hotkeys used to live in chrome.storage.local, alongside profiles (API keys
+ * included) — moved to sync so the content script never has a reason to
+ * subscribe to the same storage area as a key. Called from background.ts's
+ * onInstalled (so an update migrates it even if the user never reopens
+ * options) and from options.ts's load() (belt and suspenders, and it's the
+ * only place local.hotkeys could still exist on a very old install).
+ *
+ * Guarded against two real failure modes, not just "run once": local storage
+ * doesn't sync across devices, so a second device can still have its own
+ * stale local.hotkeys long after a first device already migrated — writing
+ * that over sync unconditionally would clobber whatever the first device
+ * already synced. First migration to actually reach sync wins; local.hotkeys
+ * is cleared either way since it's obsolete regardless of which one won.
+ */
+export async function migrateHotkeys(): Promise<void> {
+  const { hotkeys: local } = await chrome.storage.local.get("hotkeys");
+  if (!local) return;
+
+  const { hotkeys: existing } = await chrome.storage.sync.get("hotkeys");
+  if (!existing) await chrome.storage.sync.set({ hotkeys: local });
+
+  await chrome.storage.local.remove("hotkeys");
+}
