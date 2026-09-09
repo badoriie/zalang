@@ -40,6 +40,12 @@ version `0.1.0`, tag `v0.1.0-beta.1`); the files themselves never see the suffix
 `npm version` — it only touches `package.json`, creates its own tag, and would leave the manifest
 behind.
 
+**3b. Update `CHANGELOG.md`.** Move the `[Unreleased]` items (if any) into a new
+`## [<version>] - <today's date>` section — for a beta, the heading still uses the bare version
+(`## [0.2.0] - 2026-10-01`); the beta suffix belongs on the tag, not the changelog heading, since
+several beta tags can land against the same unreleased version. Add the compare-link reference at the
+bottom (`[<version>]: https://github.com/badoriie/zalang/compare/v<prev>...v<version>`).
+
 **4. Verify — the version test is the point.**
 
 ```bash
@@ -52,7 +58,7 @@ npm run check
 
 ```bash
 git switch -c chore/release-v<version>
-git add package.json manifest.json
+git add package.json manifest.json CHANGELOG.md
 git commit -m "chore(deps): release v<version>"
 git push -u origin HEAD
 ```
