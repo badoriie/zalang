@@ -28,6 +28,19 @@ export function originPattern(baseUrl: string): string {
   return `${url.protocol}//${url.host}/*`;
 }
 
+/**
+ * Some adapters (Gemini) put the key in the query string, and a custom or
+ * misconfigured endpoint can echo the request URI back in an error body —
+ * an Express default 404 page does exactly this. Errors cross the
+ * worker→content boundary into the visible overlay, so strip the key before
+ * they leave this module, not just before logging.
+ */
+export function redact(message: string, profile: Profile): string {
+  let out = message;
+  if (profile.apiKey) out = out.split(profile.apiKey).join("[REDACTED]");
+  return out.replace(/([?&]key=)[^&\s]+/gi, "$1[REDACTED]");
+}
+
 async function hasPermission(profile: Profile): Promise<boolean> {
   try {
     return await chrome.permissions.contains({ origins: [originPattern(profile.baseUrl)] });
@@ -112,8 +125,9 @@ export async function complete(req: CompletionRequest): Promise<AnnotatedResult>
       console.debug(`[zalang] ${profile.name} ${result._ms}ms`);
       return result;
     } catch (err) {
-      console.warn(`[zalang] ${profile.name} failed:`, err);
-      errors.push(err instanceof Error ? err.message : String(err));
+      const message = redact(err instanceof Error ? err.message : String(err), profile);
+      console.warn(`[zalang] ${profile.name} failed:`, message);
+      errors.push(message);
     }
   }
 
