@@ -5,27 +5,37 @@ import type { Editable } from "./editable.js";
 import { getActiveEditable, isEditable, readText, writeText } from "./editable.js";
 import * as overlay from "./overlay.js";
 import type { Anchor } from "./overlay.js";
-import type { Hotkey, Hotkeys, Message, Refinement, Reply, AnnotatedResult } from "../types.js";
+import { DEFAULT_HOTKEYS } from "../hotkeys.js";
+import type {
+  Hotkey,
+  HotkeySettings,
+  Message,
+  Refinement,
+  Reply,
+  AnnotatedResult,
+} from "../types.js";
 
-const DEFAULT_KEYS: Hotkeys = {
-  translate: { key: "Enter", ctrl: true, shift: false, alt: false },
-  explain: { key: " ", ctrl: true, shift: true, alt: false },
-};
-
-let keys: Hotkeys = DEFAULT_KEYS;
+let keys: HotkeySettings = DEFAULT_HOTKEYS;
 
 void chrome.storage.local.get("hotkeys").then(({ hotkeys }) => {
-  if (hotkeys) keys = { ...DEFAULT_KEYS, ...(hotkeys as Partial<Hotkeys>) };
+  if (hotkeys) keys = { ...DEFAULT_HOTKEYS, ...(hotkeys as Partial<HotkeySettings>) };
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.hotkeys?.newValue) {
-    keys = { ...DEFAULT_KEYS, ...(changes.hotkeys.newValue as Partial<Hotkeys>) };
+    keys = { ...DEFAULT_HOTKEYS, ...(changes.hotkeys.newValue as Partial<HotkeySettings>) };
   }
 });
 
-/** The open compose result, so Esc can undo and refine knows what to rework. */
-let pending: { el: Editable; original: string } | null = null;
+/**
+ * The open compose result, so Esc can undo and refine knows what to rework.
+ * `written` is the exact text we last put into `el` — undo() only restores
+ * over content that still matches it, so a widget that clears the field after
+ * an actual send (the normal path once "block Enter" is on, since then Enter
+ * can never trigger it) can't have its now-empty box overwritten with the
+ * stale Farsi original by a later, unrelated Escape.
+ */
+let pending: { el: Editable; original: string; written: string } | null = null;
 
 /**
  * Which flow the visible overlay belongs to. Esc must only undo a compose when
@@ -72,7 +82,10 @@ async function compose(refine: Refinement | null): Promise<void> {
   }
   if (!el || !original) return;
 
-  pending = { el, original };
+  // Whatever the field holds right now — the original on a fresh translate, or
+  // the previous translation on a refine — is what we'd be overwriting, so
+  // it's also what undo() should require still being there before restoring.
+  pending = { el, original, written: readText(el) };
   activeOverlay = "compose";
   overlay.loading(el, refine ? "در حال بازنویسی…" : "در حال ترجمه…");
 
@@ -84,7 +97,8 @@ async function compose(refine: Refinement | null): Promise<void> {
   }
 
   writeText(el, res.data.german);
-  overlay.result(el, res.data);
+  pending = { el, original, written: res.data.german };
+  overlay.result(el, res.data, keys.blockEnter);
 }
 
 // --------------------------------------------------------------- explain flow
@@ -112,7 +126,7 @@ async function explain(text?: string): Promise<void> {
 // ------------------------------------------------------------------- undo/esc
 
 function undo(): void {
-  if (pending?.el) {
+  if (pending?.el && readText(pending.el) === pending.written) {
     writeText(pending.el, pending.original);
     pending.el.focus();
   }
@@ -150,6 +164,25 @@ document.addEventListener(
       e.preventDefault();
       e.stopPropagation();
       void explain();
+      return;
+    }
+
+    if (
+      keys.blockEnter &&
+      e.key === "Enter" &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.shiftKey &&
+      !e.altKey &&
+      getActiveEditable()
+    ) {
+      // stopPropagation (not just preventDefault, which only blocks the
+      // browser's native action) so a widget's own JS keydown handler on the
+      // field never sees this Enter either — same trick as the hotkeys above.
+      // Not airtight against a page that itself listens on window in capture
+      // ahead of us, but that's rare; document capture covers the common case.
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 

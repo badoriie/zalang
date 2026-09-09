@@ -85,3 +85,8 @@ export interface Hotkeys {
   translate: Hotkey;
   explain: Hotkey;
 }
+
+export interface HotkeySettings extends Hotkeys {
+  /** Swallow a bare Enter in any editable so it can never submit the chat form by accident. */
+  blockEnter: boolean;
+}
