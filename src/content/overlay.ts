@@ -121,7 +121,7 @@ function notesHtml(notes: string[] | undefined): string {
 }
 
 function metaHtml(data: AnnotatedResult): string {
-  return esc(data._profile ?? "") + (data._ms ? ` · ${data._ms}ms` : "");
+  return esc(data._profile ?? "") + (data._ms ? esc(` · ${data._ms}ms`) : "");
 }
 
 function render(inner: string, anchor: Anchor): void {
@@ -209,6 +209,10 @@ export function explained(anchor: Anchor, data: AnnotatedResult): void {
        <button data-act="close" title="Close">×</button>
      </div>
      <div class="body">
+       <!-- Fixed text, not model output — a summary of hostile German can be
+            made to look authoritative, so provenance comes from something the
+            operator's own words can't influence. -->
+       <div class="label">از طرف اپراتور / from the operator — check the German yourself</div>
        <div class="fa">${esc(data.german)}</div>
        ${
          data.back_translation_fa
