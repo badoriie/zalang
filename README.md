@@ -18,13 +18,16 @@ certainly ask for is missing, it's flagged in the notes rather than invented.
 
 ## Install
 
+Grab the latest zip from [Releases](https://github.com/badoriie/zalang/releases) and unpack it, or
+build from source:
+
 ```bash
 npm install
 npm run build
 ```
 
-1. `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the **`dist/`**
-   folder (not the repo root).
+1. `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the unpacked folder
+   (the **`dist/`** folder if you built from source, not the repo root).
 2. Click the zalang toolbar icon to open settings.
 3. Add a provider, paste your key, click **Save & grant access**, then **Test**.
 
@@ -85,8 +88,16 @@ npm run dev           # watch build
 npm run typecheck     # tsc --noEmit
 npm test              # response parsing, schema transforms, manifest integrity
 npm run check         # everything CI runs: typecheck → lint → format → build → test
+npm run package       # minified build zipped for distribution → zalang-v<version>.zip
 npm run debug:chrome  # Chrome on port 9222 with a dedicated debug profile
 ```
+
+### Releases
+
+Pushing a tag matching `v*` triggers `.github/workflows/release.yml`: it verifies the tree, packages
+`dist/`, and publishes a GitHub Release with the zip attached. A tag with a `-` suffix
+(`v0.3.0-beta.1`) is published as a prerelease automatically — `package.json`/`manifest.json` stay
+plain semver either way, since Chrome doesn't accept prerelease suffixes there. See `/release`.
 
 ### Claude Code
 
