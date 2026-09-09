@@ -1,0 +1,41 @@
+name: Release
+
+# Fires on any version tag, including semver prerelease suffixes such as
+# v0.1.0-beta.1. The tag is what carries "beta" — package.json and
+# manifest.json must stay plain MAJOR.MINOR.PATCH (Chrome rejects semver
+# prerelease suffixes there), so this workflow never touches those files.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm run package
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          flags=(--title "$tag" --generate-notes)
+          # A tag with a `-` suffix (e.g. -beta.1, -rc.1) is a prerelease;
+          # a plain vX.Y.Z tag is a stable release.
+          if [[ "$tag" == *-* ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$tag" zalang-v*.zip "${flags[@]}"
