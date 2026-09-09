@@ -7,6 +7,12 @@ marked by the git tag and GitHub Release, not by the version number itself.
 
 ## [Unreleased]
 
+### Fixed
+
+- Conversation context now applies across subdomains — a context configured for `example.de` was
+  silently ignored on `chat.example.de`, the hostname a chat widget is far more likely to actually be
+  on.
+
 ## [0.1.0-beta.1] - 2026-09-09
 
 ### Added
