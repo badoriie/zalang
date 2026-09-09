@@ -7,6 +7,20 @@ marked by the git tag and GitHub Release, not by the version number itself.
 
 ## [Unreleased]
 
+### Security
+
+- Fixed a synthetic-event vulnerability present in v0.1.0-beta.1 and v0.1.0-beta.2: without an
+  `isTrusted` check, any web page could dispatch a fake keyboard event to silently trigger
+  translate/explain in the background, spending the user's configured API key with no click and no
+  visible UI. Guarded on every content-script listener.
+- Hotkeys moved from `chrome.storage.local` to `chrome.storage.sync`, so the content script no longer
+  subscribes to the storage area API keys live in.
+- Recent-message history (which can include the operator's own words) and site context are now
+  explicitly delimited as untrusted data in the system prompt, closing a prompt-injection vector.
+- API keys are now redacted from provider error messages before they can reach the visible overlay.
+- Subdomain site-context matching (new in beta.2) hardened against common ccTLD public suffixes
+  (`co.uk`, `com.au`, ...) and several shared hosting/support-widget platforms it previously missed.
+
 ## [0.1.0-beta.2] - 2026-09-09
 
 ### Added
