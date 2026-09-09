@@ -27,6 +27,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
 /** The open compose result, so Esc can undo and refine knows what to rework. */
 let pending: { el: Editable; original: string } | null = null;
 
+/**
+ * Which flow the visible overlay belongs to. Esc must only undo a compose when
+ * the panel it's dismissing IS that compose's result — otherwise dismissing an
+ * unrelated explain popup silently undoes a leftover compose elsewhere on the
+ * page, because `pending` outlives its own overlay by design (so undo still
+ * works after you've clicked the popup away).
+ */
+let activeOverlay: "compose" | "explain" | null = null;
+
 const domain = location.hostname || "unknown";
 
 function matches(e: KeyboardEvent, combo: Hotkey | undefined): boolean {
@@ -64,6 +73,7 @@ async function compose(refine: Refinement | null): Promise<void> {
   if (!el || !original) return;
 
   pending = { el, original };
+  activeOverlay = "compose";
   overlay.loading(el, refine ? "در حال بازنویسی…" : "در حال ترجمه…");
 
   const res = await send({ type: "translate", text: original, domain, refine });
@@ -90,6 +100,7 @@ async function explain(text?: string): Promise<void> {
   if (!selected) return;
 
   const anchor = anchorForSelection();
+  activeOverlay = "explain";
   overlay.loading(anchor, "در حال ترجمه…");
 
   const res = await send({ type: "explain", text: selected, domain });
@@ -106,6 +117,7 @@ function undo(): void {
     pending.el.focus();
   }
   pending = null;
+  activeOverlay = null;
   overlay.hide();
 }
 
@@ -141,6 +153,18 @@ document.addEventListener(
       return;
     }
 
+    if (e.key === "Escape" && activeOverlay === "explain") {
+      // Dismissing an explain popup must never undo an unrelated, still-pending
+      // compose elsewhere on the page — pending intentionally outlives its own
+      // overlay (see the comment on `activeOverlay`), so without this check
+      // this Esc would fall through to undo() and revert that other field.
+      e.preventDefault();
+      e.stopPropagation();
+      activeOverlay = null;
+      overlay.hide();
+      return;
+    }
+
     if (e.key === "Escape" && pending) {
       e.preventDefault();
       e.stopPropagation();
@@ -159,6 +183,7 @@ document.addEventListener(
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.shiftKey && pending) {
     pending = null;
+    activeOverlay = null;
     overlay.hide();
   }
 });
@@ -167,6 +192,7 @@ document.addEventListener("keydown", (e) => {
 // would be removed before their click event fired.
 document.addEventListener("mousedown", (e) => {
   if (overlay.owns(e.target) || e.target === pending?.el) return;
+  activeOverlay = null;
   overlay.hide();
 });
 
