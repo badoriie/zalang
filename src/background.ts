@@ -2,6 +2,7 @@
 // never see a key, and their fetches would be bound by the page origin anyway.
 
 import { complete } from "./providers/index.js";
+import { resolveSiteContext } from "./context.js";
 import {
   TRANSLATE_SCHEMA,
   composeSystemPrompt,
@@ -16,7 +17,7 @@ const HISTORY_TURNS = 6;
 
 async function getSiteContext(domain: string): Promise<string> {
   const { siteContexts = {} } = await chrome.storage.local.get("siteContexts");
-  return (siteContexts as Record<string, string>)[domain] ?? "";
+  return resolveSiteContext(domain, siteContexts as Record<string, string>);
 }
 
 async function getHistory(domain: string): Promise<string[]> {
