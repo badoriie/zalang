@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "zalang — Farsi → German chat assistant",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Type Farsi or Finglish in any chat box, press a hotkey, get natural formal German in place. Select German text to get it explained in Farsi.",
   "permissions": ["storage", "contextMenus"],
   "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],

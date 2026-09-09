@@ -7,6 +7,8 @@ marked by the git tag and GitHub Release, not by the version number itself.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-09
+
 ### Added
 
 - Optional "Block plain Enter from sending" setting, so a Farsi message can't be sent by habit before
@@ -31,5 +33,6 @@ marked by the git tag and GitHub Release, not by the version number itself.
 - Per-site conversation context and short-term history to improve translation accuracy.
 - Configurable hotkeys, handled in-page so they work inside iframed chat widgets.
 
-[Unreleased]: https://github.com/badoriie/zalang/compare/v0.1.0-beta.1...HEAD
+[Unreleased]: https://github.com/badoriie/zalang/compare/v0.2.0-beta.1...HEAD
+[0.2.0]: https://github.com/badoriie/zalang/compare/v0.1.0-beta.1...v0.2.0-beta.1
 [0.1.0-beta.1]: https://github.com/badoriie/zalang/releases/tag/v0.1.0-beta.1

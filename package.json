@@ -1,6 +1,6 @@
 {
   "name": "zalang",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Chrome extension: type Farsi or Finglish in any chat box, get natural formal German in place. Provider-agnostic — works with any LLM API.",
   "type": "module",
   "private": false,
