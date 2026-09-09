@@ -5,7 +5,7 @@ import type { Adapter, AnnotatedResult, CompletionRequest, Profile } from "../ty
 import * as openaiCompat from "./openai-compat.js";
 import * as anthropic from "./anthropic.js";
 import * as gemini from "./gemini.js";
-import { extractJson, normaliseResult } from "./json.js";
+import { extractJson, normaliseResult, stripUntrustedTags } from "./json.js";
 
 const ADAPTERS: Record<string, Adapter> = {
   "openai-compat": openaiCompat,
@@ -72,7 +72,8 @@ async function runProfile(profile: Profile, req: CompletionRequest): Promise<Ann
 
   // Last resort: never lose the user's message. Treat the whole reply as the
   // German text and drop the back-translation rather than failing outright.
-  const fallbackText = (repaired || raw || "").trim();
+  // This bypasses normaliseResult, so it needs its own untrusted-tag strip.
+  const fallbackText = stripUntrustedTags((repaired || raw || "").trim());
   if (!fallbackText) throw new Error(`${profile.name}: unusable response`);
 
   return {

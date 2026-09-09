@@ -64,6 +64,19 @@ export function extractJson(raw: unknown): Record<string, unknown> | null {
   return null;
 }
 
+// The system prompt wraps untrusted reference data in <untrusted-data
+// id="...">...</untrusted-data id="..."> tags (see prompts.ts). This string
+// can never be legitimate output — a weak model asked to translate hostile
+// input could still echo it back, and it would land in the chat box (german)
+// or a Farsi field the user has no way to read as suspicious. Stripped
+// unconditionally, not just when an injection is suspected.
+const UNTRUSTED_TAG = /<\/?untrusted-data\b[^>]*>/gi;
+
+/** Used on every string that can reach the chat box, including the raw-text fallback in index.ts. */
+export function stripUntrustedTags(s: string): string {
+  return s.replace(UNTRUSTED_TAG, "").trim();
+}
+
 /**
  * Validate and normalise a translation result. Returns null if unusable — the
  * caller must then fall through rather than blank the user's message.
@@ -75,13 +88,16 @@ export function normaliseResult(obj: unknown): TranslateResult | null {
   if (typeof rec.german !== "string" || !rec.german.trim()) return null;
 
   return {
-    german: rec.german.trim(),
+    german: stripUntrustedTags(rec.german),
     back_translation_fa:
-      typeof rec.back_translation_fa === "string" ? rec.back_translation_fa.trim() : "",
+      typeof rec.back_translation_fa === "string"
+        ? stripUntrustedTags(rec.back_translation_fa)
+        : "",
     notes: Array.isArray(rec.notes)
       ? rec.notes
           .filter((n): n is string => typeof n === "string" && n.trim().length > 0)
-          .map((n) => n.trim())
+          .map((n) => stripUntrustedTags(n))
+          .filter((n) => n.length > 0)
       : [],
   };
 }
