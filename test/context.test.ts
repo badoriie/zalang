@@ -43,3 +43,13 @@ test("resolveSiteContext never walks up to a bare shared-widget platform domain"
   const store = { "zendesk.com": "leaked context" };
   assert.equal(resolveSiteContext("other-company.zendesk.com", store), "");
 });
+
+test("resolveSiteContext never matches a bare public second-level suffix", () => {
+  const store = { "co.uk": "should never apply to every .co.uk site" };
+  assert.equal(resolveSiteContext("evil.co.uk", store), "");
+});
+
+test("resolveSiteContext still matches a specific company on a ccTLD with a public second-level suffix", () => {
+  const store = { "example.co.uk": "Example Ltd context" };
+  assert.equal(resolveSiteContext("chat.example.co.uk", store), "Example Ltd context");
+});
