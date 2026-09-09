@@ -1,6 +1,6 @@
 import { PRESETS, presetToProfile, SHAPES } from "./providers/presets.js";
 import { adapterFor, originPattern } from "./providers/index.js";
-import { DEFAULT_HOTKEYS } from "./hotkeys.js";
+import { DEFAULT_HOTKEYS, migrateHotkeys } from "./hotkeys.js";
 import type { Hotkey, Hotkeys, HotkeySettings, Profile } from "./types.js";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T => document.querySelector(sel) as T;
@@ -12,15 +12,24 @@ let hotkeys: HotkeySettings = { ...DEFAULT_HOTKEYS };
 // -------------------------------------------------------------------- storage
 
 async function load(): Promise<void> {
-  const stored = await chrome.storage.local.get(["profiles", "siteContexts", "hotkeys"]);
-  profiles = (stored.profiles as Profile[]) ?? [];
-  siteContexts = (stored.siteContexts as Record<string, string>) ?? {};
-  if (stored.hotkeys) hotkeys = { ...hotkeys, ...(stored.hotkeys as Partial<HotkeySettings>) };
+  const local = await chrome.storage.local.get(["profiles", "siteContexts"]);
+  profiles = (local.profiles as Profile[]) ?? [];
+  siteContexts = (local.siteContexts as Record<string, string>) ?? {};
+
+  // Normally already done by background.ts's onInstalled — this is a
+  // belt-and-suspenders catch-all for whatever state an install is in.
+  await migrateHotkeys();
+
+  const { hotkeys: synced } = await chrome.storage.sync.get("hotkeys");
+  if (synced) hotkeys = { ...hotkeys, ...(synced as Partial<HotkeySettings>) };
 }
 
 const saveProfiles = () => chrome.storage.local.set({ profiles });
 const saveContexts = () => chrome.storage.local.set({ siteContexts });
-const saveHotkeys = () => chrome.storage.local.set({ hotkeys });
+// chrome.storage.sync has a per-minute write quota that local never had;
+// log and swallow rather than an unhandled rejection if it's ever hit.
+const saveHotkeys = () =>
+  chrome.storage.sync.set({ hotkeys }).catch((err: unknown) => console.warn("[zalang]", err));
 
 // ---------------------------------------------------------------------- utils
 
@@ -80,8 +89,8 @@ function renderProfiles(): void {
       <div class="row"><label>Base URL</label><input type="text" data-f="baseUrl" value="${escapeHtml(p.baseUrl)}" placeholder="https://api.example.com" /></div>
       <div class="row"><label>API key</label><input type="password" data-f="apiKey" value="${escapeHtml(p.apiKey)}" placeholder="${preset?.needsKey === false ? "not needed" : "paste key"}" /></div>
       <div class="row"><label>Model</label>
-        <input type="text" data-f="model" value="${escapeHtml(p.model)}" placeholder="pick or type a model id" list="models-${p.id}" />
-        <datalist id="models-${p.id}"></datalist>
+        <input type="text" data-f="model" value="${escapeHtml(p.model)}" placeholder="pick or type a model id" list="models-${escapeHtml(p.id)}" />
+        <datalist id="models-${escapeHtml(p.id)}"></datalist>
         <button data-act="fetch-models">Fetch list</button>
       </div>
       <div class="row"><label>JSON mode</label>
@@ -259,6 +268,10 @@ function bindHotkeyInput(sel: string, name: keyof Hotkeys & keyof HotkeySettings
 
   input.addEventListener("keydown", (e) => {
     e.preventDefault();
+    // Holding the key down after the first press auto-repeats keydown; without
+    // this a single capture can fire chrome.storage.sync writes fast enough to
+    // hit its per-minute quota (unlike the local area this used to live in).
+    if (e.repeat) return;
     if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
 
     hotkeys[name] = {
