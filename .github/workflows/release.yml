@@ -23,7 +23,11 @@ jobs:
           node-version: 22.x
           cache: npm
 
-      - run: npm ci
+      # --ignore-scripts stops any dependency's arbitrary install/postinstall
+      # script from running; esbuild is the one package that legitimately
+      # needs one (it downloads its platform binary), so it's rebuilt by name.
+      - run: npm ci --ignore-scripts
+      - run: npm rebuild esbuild
       - run: npm run check
       - run: npm run package
 

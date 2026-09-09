@@ -11,10 +11,13 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const { version } = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const zipName = `zalang-v${version}.zip`;
 
-execFileSync("node", ["scripts/build.mjs", "--minify"], { cwd: root, stdio: "inherit" });
+// Absolute paths, not bare command names — a bare name resolves through
+// $PATH, which an attacker able to influence the runner's environment could
+// point at a different binary.
+execFileSync(process.execPath, ["scripts/build.mjs", "--minify"], { cwd: root, stdio: "inherit" });
 
 rmSync(join(root, zipName), { force: true });
-execFileSync("zip", ["-rq", join("..", zipName), "."], {
+execFileSync("/usr/bin/zip", ["-rq", join("..", zipName), "."], {
   cwd: join(root, "dist"),
   stdio: "inherit",
 });
